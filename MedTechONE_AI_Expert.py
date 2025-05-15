@@ -65,11 +65,9 @@ IMPORTANT: You MUST ONLY use content that has been retrieved from the MedTechONE
 
 The knowledge hub website is structured as follows (you should know all the pages as they are stored in the site pages dataset in Supabase): 
 
-There is a topic wheel on the homepage (https://medtechone-learning.com/), this topic wheel is a circle with 15 slices that all represent individual site pages about that topic, not all these pages have been completed yet but are in progress. These 15 slices are also divided into 5 themes. 
-
-The site also links some relevant PDF’s linked under the “Latest news & updates” section. 
-
-The site also has a “Spotlight” section, highlighting interviews with researchers based at Imperial College, where MedTechONE and the Hamlyn Centre are based.
+• There is a topic wheel on the homepage (https://medtechone-learning.com/), this topic wheel is a circle with 15 slices that all represent individual site pages about that topic, not all these pages have been completed yet but are in progress. These 15 slices are also divided into 5 themes. 
+• The site also links some relevant PDF's linked under the "Latest news & updates" section. 
+• The site also has a "Spotlight" section, highlighting interviews with researchers based at Imperial College, where MedTechONE and the Hamlyn Centre are based.
 
 - The following topics are currently available:
   • Developing software
@@ -78,7 +76,7 @@ The site also has a “Spotlight” section, highlighting interviews with resear
   • Clinical trials
   • Usability
 
-- The following topics are under development and will be released in 2025:
+- The following topics are under development and will be released in the future:
   • Developing hardware
   • Setting up a company
   • Intellectual Property
@@ -90,21 +88,23 @@ The site also has a “Spotlight” section, highlighting interviews with resear
   • Reimbursement strategies
   • Market entry & uptake
 
-If a user asks about a topic under development, respond: "This topic is under development and will be released in 2025. Please let me know if you'd like information on any of the currently available topics."
+If a user asks about a topic under development, respond: "This topic is under development and will be released in the future. Please let me know if you'd like information on any of the currently available topics such as."
 
 Response Structure:
 When responding to ANY query, you MUST follow this exact structure:
 
 1. Content Overview:
-   - Start with a clear overview of the topic using the data from the PDF’s and referring the user to the relevant site pages.
-   - If no content is found, state that you are not knowledgable on this subject at the moment.
-   - Highlight any relevant recommended resources from the airtable.
+   - Start with a clear overview of the topic using the data from the PDF's and referring the user to the relevant site pages.
+   - If no content is found, state that you are not knowledgeable on this subject at the moment.
 
-2. Next Steps for ECRs:
+2. Recommended Resources:
+   - Display relevant recommended resources, which come from the Airtable.
+
+3. Next Steps for ECRs:
    - Provide a clear, actionable list of next steps
    - Note any regulatory considerations
 
-6. If no content was found in the database, say:
+4. If no content was found in the database, say:
    "I couldn't find specific content about [topic] in the MedTechONE database. Could you please:
    1. Clarify what specific aspect of [topic] you're interested in?
    2. Let me know if you're looking for information about a particular type of device or development stage?
@@ -112,15 +112,13 @@ When responding to ANY query, you MUST follow this exact structure:
 
 
 Constraints:
-🚫 ONLY use content that has been retrieved from the database
+🚫 ONLY use content that has been retrieved from the database or airtable
 🚫 NEVER generate generic explanations or content
 🚫 If no content is found, ask for clarification instead of providing generic information
 🚫 Never link to empty or under-construction pages
-🚫 Always use list_airtable_resources when discussing any topic
 🚫 Never make assumptions about regulatory or legal matters
-🚫 Always consider the ECR's development stage and device type when providing information
-🚫 Prioritize practical, actionable advice over theoretical knowledge
-🚫 Always consider Imperial College London specific resources and context
+🚫 Always consider the ECR's development stage and device type when providing information, try and ascertain this information from them
+🚫 Prioritise practical, actionable advice over theoretical knowledge
 🚫 Focus on supporting Imperial College London's excellence in MedTech research and translation
 
 """
@@ -234,6 +232,7 @@ async def get_page_content(ctx: RunContext[MedTechONEAIDeps], url: str) -> str:
 def list_airtable_resources(ctx: RunContext[MedTechONEAIDeps], filter_field: str = None, filter_value: str = None) -> str:
     """
     List resources from the Airtable 'Source repository' table with ECR-specific metadata.
+    Now matches filter_value against Title, Description, Topics, and Theme fields (case-insensitive, partial match).
     """
     try:
         print("Starting Airtable resource listing...")
@@ -251,11 +250,14 @@ def list_airtable_resources(ctx: RunContext[MedTechONEAIDeps], filter_field: str
         for record in records:
             fields = record['fields']
             
-            # Apply partial, case-insensitive filter on Topics and Theme
+            # Apply partial, case-insensitive filter on Title, Description, Topics, and Theme
             if filter_value:
+                filter_val = filter_value.lower()
+                title_val = str(fields.get('Title', "")).lower()
+                desc_val = str(fields.get('Description', "")).lower()
                 topics_val = str(fields.get('Topics', "")).lower()
                 theme_val = str(fields.get('Theme', "")).lower()
-                if filter_value.lower() not in topics_val and filter_value.lower() not in theme_val:
+                if not (filter_val in title_val or filter_val in desc_val or filter_val in topics_val or filter_val in theme_val):
                     continue
             
             # Extract ECR-specific metadata
@@ -288,11 +290,12 @@ def list_airtable_resources(ctx: RunContext[MedTechONEAIDeps], filter_field: str
         # Format the output
         output = []
         for resource in formatted_resources:
+            link_line = f"- **Read This Document Directly Here:** [{resource['link']}]({resource['link']})" if resource['link'] else "- **No direct document link available.**"
             output.append(f"""
 ## {resource['title']}
 - **Author:** {resource['author']}
 - **Description:** {resource['description']}
-- **Link:** [{resource['link']}]({resource['link']})
+{link_line}
 - **Type:** {resource['type']}
 - **Access Type:** {resource['access_type']}
 
@@ -316,36 +319,80 @@ def list_airtable_resources(ctx: RunContext[MedTechONEAIDeps], filter_field: str
 async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], user_query: str) -> str:
     """
     Retrieve relevant content from both PDFs and web pages, with ECR-specific context.
+    Implements hybrid search: always run both embedding and keyword search, combine and deduplicate results.
+    Broaden keyword fallback to search for related terms and increase match_count to 10.
     """
     try:
         # Get embedding for the query
         query_embedding = await get_embedding(user_query, ctx.deps.openai_client)
         
-        # Search in PDF documents with ECR metadata
+        # Extract key terms from the query for broader search
+        query_terms = user_query.lower().split()
+        keywords = [user_query.lower()] + query_terms + ["class", "classification", "device", "medical"]
+        seen_ids = set()
+        hybrid_pdf_results = []
+        
+        # 1. First try exact embedding match
         pdf_results = ctx.deps.supabase.rpc(
             'match_pdf_documents',
-            {'query_embedding': query_embedding, 'match_threshold': 0.0, 'match_count': 5}
+            {'query_embedding': query_embedding, 'match_threshold': 0.0, 'match_count': 10}
         ).execute()
-        print("PDF Results Raw:", pdf_results.data)
         
-        # Search in web pages (site_pages)
+        # Add embedding results first
+        for doc in (pdf_results.data or []):
+            doc_id = doc.get('id')
+            if doc_id not in seen_ids:
+                hybrid_pdf_results.append(doc)
+                seen_ids.add(doc_id)
+        
+        # 2. If no results, try broader keyword search
+        if not hybrid_pdf_results:
+            for kw in keywords:
+                # Search in content
+                keyword_result_content = ctx.deps.supabase.from_('pdf_documents') \
+                    .select('id, title, content, associated_url, metadata, ecr_metadata') \
+                    .ilike('content', f'%{kw}%') \
+                    .limit(10) \
+                    .execute()
+                
+                # Search in title
+                keyword_result_title = ctx.deps.supabase.from_('pdf_documents') \
+                    .select('id, title, content, associated_url, metadata, ecr_metadata') \
+                    .ilike('title', f'%{kw}%') \
+                    .limit(10) \
+                    .execute()
+                
+                # Add unique results
+                for doc in (keyword_result_content.data or []):
+                    doc_id = doc.get('id')
+                    if doc_id not in seen_ids:
+                        hybrid_pdf_results.append(doc)
+                        seen_ids.add(doc_id)
+                
+                for doc in (keyword_result_title.data or []):
+                    doc_id = doc.get('id')
+                    if doc_id not in seen_ids:
+                        hybrid_pdf_results.append(doc)
+                        seen_ids.add(doc_id)
+        
+        # 3. Search in web pages
         web_results = ctx.deps.supabase.rpc(
             'match_site_pages',
-            {'query_embedding': query_embedding, 'match_count': 5, 'filter': {}}
+            {'query_embedding': query_embedding, 'match_count': 10, 'filter': {}}
         ).execute()
         
         # Combine and format results
         results = []
         
         # Process PDF results
-        for doc in pdf_results.data:
+        for doc in hybrid_pdf_results:
             results.append({
                 'type': 'pdf',
-                'title': doc['title'],
-                'content': doc['content'],
-                'url': doc['associated_url'],
+                'title': doc.get('title', ''),
+                'content': doc.get('content', ''),
+                'url': doc.get('associated_url', ''),
                 'ecr_metadata': doc.get('ecr_metadata', {}),
-                'similarity': doc['similarity']
+                'similarity': doc.get('similarity', None)
             })
         
         # Process web results
@@ -358,14 +405,17 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                 'similarity': doc['similarity']
             })
         
-        # Sort by similarity
-        results.sort(key=lambda x: x['similarity'], reverse=True)
+        # Sort by similarity if available
+        results.sort(key=lambda x: x.get('similarity', 0) or 0, reverse=True)
         
-        return json.dumps(results, indent=2)
+        # Always return at least the top result if available
+        if results:
+            return json.dumps(results, indent=2)
+        return ""
         
     except Exception as e:
         print(f"Error retrieving content: {e}")
-        return json.dumps([])
+        return ""
 
 if __name__ == "__main__":
     from pyairtable import Table

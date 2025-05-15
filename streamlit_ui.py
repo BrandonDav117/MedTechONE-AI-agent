@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Literal, TypedDict
 import asyncio
 import os
+import random
 
 import streamlit as st
 import json
@@ -58,12 +59,14 @@ except Exception as e:
 logfire.configure(send_to_logfire='never')
 
 # Cache for Airtable records
+from pyairtable import Api
+api = Api(airtable_token)
+
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def get_airtable_records():
     """Get records from Airtable with caching."""
     try:
-        from pyairtable import Table
-        table = Table(airtable_token, airtable_base_id, "Source repository")
+        table = api.table(airtable_base_id, "Source repository")
         return table.all(max_records=100)
     except Exception as e:
         print(f"Error fetching Airtable records: {e}")
@@ -140,10 +143,21 @@ async def run_agent_with_streaming(user_input: str):
                                             any(part.part_kind == 'user-prompt' for part in msg.parts))]
                 st.session_state.messages.extend(filtered_messages)
 
-                # Add the final response to the messages
-                st.session_state.messages.append(
-                    ModelResponse(parts=[TextPart(content=partial_text)])
-                )
+                # Only append the final response if it's not a duplicate of the last ModelResponse
+                if partial_text.strip():
+                    # Find the last ModelResponse in the chat history
+                    last_response = next((msg for msg in reversed(st.session_state.messages) if isinstance(msg, ModelResponse)), None)
+                    last_content = None
+                    if last_response and hasattr(last_response, 'parts') and last_response.parts:
+                        last_content = getattr(last_response.parts[0], 'content', None)
+                    if partial_text.strip() != (last_content or ""):
+                        st.session_state.messages.append(
+                            ModelResponse(parts=[TextPart(content=partial_text)])
+                        )
+
+                # Show fallback message if the response is empty
+                if not partial_text.strip() or partial_text.strip() == "[]":
+                    st.warning("I couldn't find specific content about your query in the MedTechONE database. Please clarify your question or try a different topic.")
                 return  # Success - exit the retry loop
 
         except httpx.RemoteProtocolError as e:
@@ -159,7 +173,54 @@ async def run_agent_with_streaming(user_input: str):
             raise
 
 
+async def generate_mcqs_for_topic(topic: str, deps) -> list[dict]:
+    """
+    Generate 6 MCQs for the selected topic using the agent and database content.
+    Returns a list of dicts: {question, options, correct, explanation}
+    """
+    prompt = f"Generate 6 multiple-choice questions (with 4 options each) about '{topic}' based on the MedTechONE database. For each question, provide: the question, 4 options, the correct option index (0-based), and a brief explanation. Return as a JSON list."
+    try:
+        response = await deps.openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a MedTechONE assessment generator."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
+        questions = json.loads(response.choices[0].message.content)
+        if isinstance(questions, dict) and 'questions' in questions:
+            questions = questions['questions']
+        # Accept both 'correct' and 'correct_option' as the answer index
+        for q in questions:
+            if 'correct_option_index' in q:
+                q['correct'] = q['correct_option_index']
+            elif 'correct_option' in q:
+                q['correct'] = q['correct_option']
+        if isinstance(questions, list) and all('question' in q and 'options' in q and 'correct' in q and 'explanation' in q for q in questions):
+            return questions[:6]
+        st.session_state.assessment_error = f"Unexpected response: {response.choices[0].message.content}"
+    except Exception as e:
+        st.session_state.assessment_error = f"Error generating MCQs: {e}"
+    return [
+        {
+            'question': f'Placeholder Q{i+1} for {topic}',
+            'options': [f'Option {chr(65+j)}' for j in range(4)],
+            'correct': random.randint(0, 3),
+            'explanation': 'This is a placeholder explanation.'
+        } for i in range(6)
+    ]
+
+
 async def main():
+    # Create dependencies object at the top of main so it's available everywhere
+    deps = MedTechONEAIDeps(
+        supabase=supabase,
+        openai_client=openai_client,
+        airtable_token=os.getenv("AIRTABLE_TOKEN"),
+        airtable_base_id=os.getenv("AIRTABLE_BASE_ID")
+    )
+
     col1, col2 = st.columns([3, 1])  # Adjust column ratios as needed
 
     with col1:
@@ -198,6 +259,74 @@ async def main():
         with st.chat_message("assistant"):
             # Actually run the agent now, streaming the text
             await run_agent_with_streaming(user_input)
+
+    # Move Assessment Mode toggle to top left of main UI
+    assessment_mode = st.toggle('Assessment Mode', value=st.session_state.get('assessment_mode_switch', False), key='assessment_mode_switch')
+
+    # List of available topics (from system prompt)
+    available_topics = [
+        "Developing software",
+        "Processing & managing data",
+        "Pre-clinical trials",
+        "Clinical trials",
+        "Usability"
+    ]
+
+    # Apply red border if Assessment Mode is on
+    if assessment_mode:
+        st.info('Assessment Mode is ON. The agent will quiz you on selected topics.')
+        # Topic selection UI
+        selected_topic = st.selectbox('Select a topic to be assessed on:', available_topics)
+        st.write(f'You selected: **{selected_topic}**')
+
+        # Assessment session state
+        if 'assessment_started' not in st.session_state or st.session_state.get('assessment_topic') != selected_topic:
+            st.session_state.assessment_started = False
+            st.session_state.assessment_topic = selected_topic
+            st.session_state.assessment_question_idx = 0
+            st.session_state.assessment_answers = []
+            st.session_state.assessment_questions = []
+
+        # Start assessment after topic selection
+        if not st.session_state.assessment_started:
+            st.markdown("""
+            ### Assessment Introduction
+            You are about to begin an assessment on **{topic}**. There will be **6 multiple-choice questions**. You will receive feedback and explanations after you answer all questions. Good luck!
+            """.format(topic=selected_topic))
+            if st.button('Start Assessment'):
+                st.session_state.assessment_started = True
+                st.session_state.assessment_question_idx = 0
+                st.session_state.assessment_answers = []
+                st.session_state.assessment_error = None
+                st.session_state.assessment_questions = await generate_mcqs_for_topic(selected_topic, deps)
+                st.rerun()
+        else:
+            if st.session_state.get('assessment_error'):
+                st.error(st.session_state.assessment_error)
+            questions = st.session_state.assessment_questions
+            q_idx = st.session_state.assessment_question_idx
+            if q_idx < 6 and questions:
+                q = questions[q_idx]
+                st.markdown(f"**Question {q_idx+1} of 6:** {q['question']}")
+                answer = st.radio('Select your answer:', q['options'], key=f'assess_q{q_idx}')
+                if st.button('Next', key=f'next_q{q_idx}'):
+                    st.session_state.assessment_answers.append(answer)
+                    st.session_state.assessment_question_idx += 1
+                    st.rerun()
+            elif q_idx >= 6:
+                # Simple summary feedback
+                questions = st.session_state.assessment_questions
+                answers = st.session_state.assessment_answers
+                score = 0
+                st.success('Assessment complete!')
+                st.markdown(f"### Your Score: {sum(answers[i] == q['options'][q['correct']] for i, q in enumerate(questions))} / {len(questions)} correct\n")
+                for i, q in enumerate(questions):
+                    user_ans = answers[i] if i < len(answers) else None
+                    correct_ans = q['options'][q['correct']]
+                    st.markdown(f"**Q{i+1}: {q['question']}**")
+                    st.markdown(f"- Your answer: {user_ans}")
+                    st.markdown(f"- Correct answer: {correct_ans}")
+                    st.markdown(f"- Explanation: {q['explanation']}\n")
 
 
 if __name__ == "__main__":
