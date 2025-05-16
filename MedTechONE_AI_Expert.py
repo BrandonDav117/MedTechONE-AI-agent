@@ -56,6 +56,14 @@ st.markdown("""
         .stAlert {
             word-break: break-word !important;
         }
+        h1, .stTitle {
+            font-size: 1.5rem !important;
+            line-height: 1.8rem !important;
+        }
+        textarea, .stTextInput>div>div>input {
+            min-height: 3.5em !important;
+            font-size: 1.1rem !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
