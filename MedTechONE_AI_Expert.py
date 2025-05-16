@@ -61,8 +61,8 @@ st.markdown("""
             line-height: 1.3rem !important;
             margin-left: 0.5rem !important;
         }
-        .stSubheader {
-            margin-left: 0 !important;
+        .stSubheader, .stMarkdown:first-of-type {
+            margin-left: 0.5rem !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 1.3em !important;
