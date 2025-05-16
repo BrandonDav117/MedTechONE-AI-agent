@@ -343,35 +343,20 @@ st.markdown("""
     @media (max-width: 600px) {
         h1, .stTitle {
             font-size: 1.3rem !important;
+            margin-left: 0.2rem !important;
         }
-        h2, .stHeader {
+        p, .stMarkdown {
             font-size: 1.1rem !important;
-        }
-        .stSubheader {
-            font-size: 1rem !important;
-        }
-            
-        h1 {
             margin-left: 0.2rem !important;
-        }
-        .stTitle {
-            margin-left: 0.2rem !important;
-        }
-        h2 {
-            margin-left: 0.2rem !important;
-        }
-        .stHeader {
-            margin-left: 0.2rem !important;
-        }
-        .stSubheader {
-            margin-left: 0.4rem !important;
         }
         .stImage img {
+            font-size: 1rem !important;
             margin-left: 0.2rem !important;
-        } 
-        div[data-testid="stHorizontalBlock"] {
-            margin-left: 2rem !important;
         }
+        div[data-testid="stHorizontalBlock"] {
+            margin-left: 0.2rem !important;
+        }
+            
             
 
         .stImage img {
