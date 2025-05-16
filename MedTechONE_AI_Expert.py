@@ -65,6 +65,10 @@ st.markdown("""
             min-height: 3.5em !important;
             font-size: 1.1rem !important;
         }
+        /* Reduce margin below Assessment Mode toggle */
+        .stToggle {
+            margin-bottom: 0.2rem !important;
+        }
         /* Make the Hamlyn logo even smaller on mobile */
         img, .stImage>img {
             max-width: 60px !important;
