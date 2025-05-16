@@ -10,6 +10,7 @@ from functools import lru_cache
 from typing import List, Dict, Optional
 import time
 import json
+import streamlit as st
 
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.models.openai import OpenAIModel
@@ -28,6 +29,36 @@ logfire.configure(send_to_logfire='if-token-present')
 EMBEDDING_CACHE_SIZE = 1000
 DOCUMENT_CACHE_SIZE = 100
 CACHE_TTL = 3600  # 1 hour in seconds
+
+st.markdown("""
+    <style>
+    @media (max-width: 600px) {
+        .block-container {
+            padding: 0.5rem 0.2rem !important;
+        }
+        .stButton>button {
+            width: 100% !important;
+            font-size: 1.1rem !important;
+            padding: 0.75em 0.5em !important;
+        }
+        .stSelectbox, .stTextInput, .stRadio, .stExpander {
+            font-size: 1.1rem !important;
+        }
+        .stMarkdown, .stAlert, .stText, .stSubheader, .stHeader, .stTitle {
+            font-size: 1.05rem !important;
+        }
+        label, .css-1cpxqw2 {
+            font-size: 1.1rem !important;
+        }
+        .stRadio > div {
+            flex-direction: column !important;
+        }
+        .stAlert {
+            word-break: break-word !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 @dataclass
 class MedTechONEAIDeps:
