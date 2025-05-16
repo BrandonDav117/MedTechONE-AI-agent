@@ -347,20 +347,14 @@ st.markdown("""
             margin-left: 0.5rem !important;
         }
         /* Align Assessment Mode toggle with title/subheading */
-        .stToggle {
+        div[data-testid="stHorizontalBlock"] > div:first-child {
             margin-left: 0.5rem !important;
-            margin-top: 0.5rem !important;
             margin-bottom: 0.5rem !important;
-        }
-        .stToggle label {
-            padding-top: 0.1rem !important;
-            padding-bottom: 0.1rem !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 1.3em !important;
             font-size: 1.1rem !important;
         }
-        /* Make the Hamlyn logo even smaller on mobile */
         img, .stImage>img {
             max-width: 60px !important;
             height: auto !important;
