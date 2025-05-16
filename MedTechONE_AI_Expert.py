@@ -56,13 +56,16 @@ st.markdown("""
         .stAlert {
             word-break: break-word !important;
         }
-        h1, .stTitle, h2, .stHeader, .stSubheader {
+        h1, .stTitle, h2, .stHeader {
             font-size: 1.1rem !important;
             line-height: 1.3rem !important;
             margin-left: 0.5rem !important;
         }
+        .stSubheader {
+            margin-left: 0 !important;
+        }
         textarea, .stTextInput>div>div>input {
-            min-height: 3.5em !important;
+            min-height: 1.3em !important;
             font-size: 1.1rem !important;
         }
         /* Reduce margin below Assessment Mode toggle */
