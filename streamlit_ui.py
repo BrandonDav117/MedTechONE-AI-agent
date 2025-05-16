@@ -350,9 +350,9 @@ st.markdown("""
         .stSubheader {
             font-size: 1rem !important;
         }
-        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
+        h1, .stTitle, h2, .stHeader, .stSubheader,
         .stImage img {
-            margin-left: 0.2rem;
+            margin-left: 0.2rem !important;
         }
         div[data-testid="stHorizontalBlock"] {
             margin-left: 0.4rem !important;
