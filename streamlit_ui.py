@@ -113,6 +113,8 @@ async def run_agent_with_streaming(user_input: str):
     """
     Run the agent with streaming text for the user_input prompt,
     while maintaining the entire conversation in `st.session_state.messages`.
+    If a tool/function call chunk is encountered (causing AssertionError),
+    fall back to a non-streaming response.
     """
     # Prepare dependencies
     deps = MedTechONEAIDeps(
@@ -133,25 +135,27 @@ async def run_agent_with_streaming(user_input: str):
                 deps=deps,
                 message_history=st.session_state.messages[:-1],  # pass entire conversation so far
             ) as result:
-                # We'll gather partial text to show incrementally
                 partial_text = ""
                 message_placeholder = st.empty()
-
-                # Render partial text as it arrives
-                async for chunk in result.stream_text(delta=True):
-                    partial_text += chunk
-                    message_placeholder.markdown(partial_text)
+                try:
+                    async for chunk in result.stream_text(delta=True):
+                        if chunk:
+                            partial_text += chunk
+                            message_placeholder.markdown(partial_text)
+                except AssertionError as e:
+                    # Fallback: get the full response (non-streaming)
+                    st.warning("Tool/function call detected, falling back to non-streaming response.")
+                    full_response = await result.get_final_response()
+                    message_placeholder.markdown(full_response)
+                    partial_text = full_response
 
                 # Now that the stream is finished, we have a final result.
-                # Add new messages from this run, excluding user-prompt messages
                 filtered_messages = [msg for msg in result.new_messages() 
                                     if not (hasattr(msg, 'parts') and 
                                             any(part.part_kind == 'user-prompt' for part in msg.parts))]
                 st.session_state.messages.extend(filtered_messages)
 
-                # Only append the final response if it's not a duplicate of the last ModelResponse
                 if partial_text.strip():
-                    # Find the last ModelResponse in the chat history
                     last_response = next((msg for msg in reversed(st.session_state.messages) if isinstance(msg, ModelResponse)), None)
                     last_content = None
                     if last_response and hasattr(last_response, 'parts') and last_response.parts:
@@ -161,7 +165,6 @@ async def run_agent_with_streaming(user_input: str):
                             ModelResponse(parts=[TextPart(content=partial_text)])
                         )
 
-                # Show fallback message if the response is empty
                 if not partial_text.strip() or partial_text.strip() == "[]":
                     st.warning("I couldn't find specific content about your query in the MedTechONE database. Please clarify your question or try a different topic.")
                 return  # Success - exit the retry loop
@@ -338,26 +341,26 @@ async def main():
 st.markdown("""
     <style>
     @media (max-width: 600px) {
-        h1, .stTitle, h2, .stHeader {
-            font-size: 1.1rem !important;
-            line-height: 1.3rem !important;
+        /* Consistent left margin for all main elements */
+        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
+        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
+        .stImage img {
             margin-left: 0.5rem !important;
         }
-        .stSubheader, .stMarkdown:first-of-type {
-            margin-left: 0.5rem !important;
-        }
-        /* Align Assessment Mode toggle with title/subheading */
-        div[data-testid="stHorizontalBlock"] > div:first-child {
-            margin-left: 0.5rem !important;
+        /* Consistent vertical spacing between elements */
+        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
+        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
+        .stImage img {
             margin-bottom: 0.5rem !important;
+        }
+        /* Make the Hamlyn logo even smaller on mobile */
+        .stImage img {
+            max-width: 60px !important;
+            height: auto !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 1.3em !important;
             font-size: 1.1rem !important;
-        }
-        img, .stImage>img {
-            max-width: 60px !important;
-            height: auto !important;
         }
     }
     </style>

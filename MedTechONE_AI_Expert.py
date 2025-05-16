@@ -373,70 +373,62 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
     Retrieve relevant content from both PDFs and web pages, with ECR-specific context.
     Implements hybrid search: always run both embedding and keyword search, combine and deduplicate results.
     Broaden keyword fallback to search for related terms and increase match_count to 10.
+    Always signpost and recommend resources by default.
     """
     try:
         # Get embedding for the query
         query_embedding = await get_embedding(user_query, ctx.deps.openai_client)
-        
-        # Extract key terms from the query for broader search
         query_terms = user_query.lower().split()
         keywords = [user_query.lower()] + query_terms + ["class", "classification", "device", "medical"]
         seen_ids = set()
         hybrid_pdf_results = []
-        
-        # 1. First try exact embedding match
+
+        # 1. Embedding match for PDFs
         pdf_results = ctx.deps.supabase.rpc(
             'match_pdf_documents',
             {'query_embedding': query_embedding, 'match_threshold': 0.0, 'match_count': 10}
         ).execute()
-        
-        # Add embedding results first
         for doc in (pdf_results.data or []):
             doc_id = doc.get('id')
             if doc_id not in seen_ids:
                 hybrid_pdf_results.append(doc)
                 seen_ids.add(doc_id)
-        
-        # 2. If no results, try broader keyword search
+
+        # 2. Broader keyword search if needed
         if not hybrid_pdf_results:
             for kw in keywords:
-                # Search in content
                 keyword_result_content = ctx.deps.supabase.from_('pdf_documents') \
                     .select('id, title, content, associated_url, metadata, ecr_metadata') \
                     .ilike('content', f'%{kw}%') \
                     .limit(10) \
                     .execute()
-                
-                # Search in title
                 keyword_result_title = ctx.deps.supabase.from_('pdf_documents') \
                     .select('id, title, content, associated_url, metadata, ecr_metadata') \
                     .ilike('title', f'%{kw}%') \
                     .limit(10) \
                     .execute()
-                
-                # Add unique results
                 for doc in (keyword_result_content.data or []):
                     doc_id = doc.get('id')
                     if doc_id not in seen_ids:
                         hybrid_pdf_results.append(doc)
                         seen_ids.add(doc_id)
-                
                 for doc in (keyword_result_title.data or []):
                     doc_id = doc.get('id')
                     if doc_id not in seen_ids:
                         hybrid_pdf_results.append(doc)
                         seen_ids.add(doc_id)
-        
+
         # 3. Search in web pages
         web_results = ctx.deps.supabase.rpc(
             'match_site_pages',
             {'query_embedding': query_embedding, 'match_count': 10, 'filter': {}}
         ).execute()
-        
-        # Combine and format results
+
+        # 4. Airtable resources (always include)
+        airtable_resources_md = list_airtable_resources(ctx, filter_value=user_query)
+
+        # 5. Combine and format results
         results = []
-        
-        # Process PDF results
         for doc in hybrid_pdf_results:
             results.append({
                 'type': 'pdf',
@@ -446,8 +438,6 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                 'ecr_metadata': doc.get('ecr_metadata', {}),
                 'similarity': doc.get('similarity', None)
             })
-        
-        # Process web results
         for doc in web_results.data:
             results.append({
                 'type': 'web',
@@ -456,15 +446,30 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                 'url': doc['url'],
                 'similarity': doc['similarity']
             })
-        
-        # Sort by similarity if available
         results.sort(key=lambda x: x.get('similarity', 0) or 0, reverse=True)
-        
-        # Always return at least the top result if available
+
+        # 6. Build structured response
+        overview = ""
         if results:
-            return json.dumps(results, indent=2)
-        return ""
-        
+            top = results[0]
+            overview = f"**Content Overview:**\n{top['content'][:500]}...\n\n" if top['content'] else ""
+        else:
+            overview = "I couldn't find specific content about this topic in the MedTechONE database. Please clarify your question or try a different topic.\n\n"
+
+        # Recommended resources (PDFs, web, Airtable)
+        recommended = "**Recommended Resources:**\n"
+        for r in results[:5]:
+            if r['url']:
+                recommended += f"- [{r['title']}]({r['url']})\n"
+            else:
+                recommended += f"- {r['title']}\n"
+        if airtable_resources_md and 'No resources found' not in airtable_resources_md:
+            recommended += f"\n**Airtable Resources:**\n{airtable_resources_md}\n"
+
+        # Next steps
+        next_steps = "**Next Steps for ECRs:**\n1. Review the recommended resources above.\n2. Clarify your device type, development stage, and regulatory needs.\n3. Reach out to MedTechONE for tailored support.\n"
+
+        return overview + recommended + next_steps
     except Exception as e:
         print(f"Error retrieving content: {e}")
         return ""
