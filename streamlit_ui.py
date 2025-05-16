@@ -353,6 +353,9 @@ st.markdown("""
             font-size: 1rem !important;
             margin-left: 0.1rem !important;
         }
+        div[data-testid="stHorizontalBlock"] {
+            margin-bottom: -0.5rem !important;
+        }
             
             
 
