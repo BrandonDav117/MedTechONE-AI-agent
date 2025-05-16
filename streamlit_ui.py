@@ -346,9 +346,15 @@ st.markdown("""
         .stSubheader, .stMarkdown:first-of-type {
             margin-left: 0.5rem !important;
         }
-        /* Reduce margin below Assessment Mode toggle */
+        /* Align Assessment Mode toggle with title/subheading */
         .stToggle {
-            margin-bottom: 0.2rem !important;
+            margin-left: 0.5rem !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+        .stToggle label {
+            padding-top: 0.1rem !important;
+            padding-bottom: 0.1rem !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 1.3em !important;
