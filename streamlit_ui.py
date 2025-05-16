@@ -356,7 +356,7 @@ st.markdown("""
         }
         /* Use padding-left for Assessment Mode toggle parent */
         div[data-testid="stHorizontalBlock"] {
-            padding-left: 1.5rem !important;
+            padding-left: -1.5rem !important;
         }
         .stImage img {
             max-width: 60px !important;
