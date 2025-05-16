@@ -33,49 +33,20 @@ CACHE_TTL = 3600  # 1 hour in seconds
 st.markdown("""
     <style>
     @media (max-width: 600px) {
-        .block-container {
-            padding: 0.5rem 0.2rem !important;
-        }
-        .stButton>button {
-            width: 100% !important;
-            font-size: 1.1rem !important;
-            padding: 0.75em 0.5em !important;
-        }
-        .stSelectbox, .stTextInput, .stRadio, .stExpander {
-            font-size: 1.1rem !important;
-        }
-        .stMarkdown, .stAlert, .stText, .stSubheader, .stHeader, .stTitle {
-            font-size: 1.05rem !important;
-        }
-        label, .css-1cpxqw2 {
-            font-size: 1.1rem !important;
-        }
-        .stRadio > div {
-            flex-direction: column !important;
-        }
-        .stAlert {
-            word-break: break-word !important;
-        }
-        h1, .stTitle, h2, .stHeader {
-            font-size: 1.1rem !important;
-            line-height: 1.3rem !important;
+        /* Consistent left margin and vertical spacing for all main elements */
+        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
+        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
+        .stImage img {
             margin-left: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
         }
-        .stSubheader, .stMarkdown:first-of-type {
-            margin-left: 0.5rem !important;
+        .stImage img {
+            max-width: 60px !important;
+            height: auto !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 1.3em !important;
             font-size: 1.1rem !important;
-        }
-        /* Reduce margin below Assessment Mode toggle */
-        .stToggle {
-            margin-bottom: 0.2rem !important;
-        }
-        /* Make the Hamlyn logo even smaller on mobile */
-        img, .stImage>img {
-            max-width: 60px !important;
-            height: auto !important;
         }
     }
     </style>

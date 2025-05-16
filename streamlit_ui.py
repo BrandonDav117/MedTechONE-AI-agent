@@ -341,19 +341,17 @@ async def main():
 st.markdown("""
     <style>
     @media (max-width: 600px) {
-        /* Consistent left margin for all main elements */
+        /* Standard left margin for title, subheading, logo */
         h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
-        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
         .stImage img {
             margin-left: 0.5rem !important;
-        }
-        /* Consistent vertical spacing between elements */
-        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
-        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
-        .stImage img {
             margin-bottom: 0.5rem !important;
         }
-        /* Make the Hamlyn logo even smaller on mobile */
+        /* Larger left margin for Assessment Mode toggle */
+        div[data-testid="stHorizontalBlock"] > div:first-child {
+            margin-left: 1.2rem !important;
+            margin-bottom: 0.5rem !important;
+        }
         .stImage img {
             max-width: 60px !important;
             height: auto !important;
