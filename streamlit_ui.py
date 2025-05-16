@@ -350,13 +350,30 @@ st.markdown("""
         .stSubheader {
             font-size: 1rem !important;
         }
-        h1, .stTitle, h2, .stHeader, .stSubheader,
-        .stImage img {
+            
+        h1 {
             margin-left: 0.2rem !important;
         }
-        div[data-testid="stHorizontalBlock"] {
+        .stTitle {
+            margin-left: 0.2rem !important;
+        }
+        h2 {
+            margin-left: 0.2rem !important;
+        }
+        .stHeader {
+            margin-left: 0.2rem !important;
+        }
+        .stSubheader {
             margin-left: 0.4rem !important;
         }
+        .stImage img {
+            margin-left: 0.2rem !important;
+        } 
+        div[data-testid="stHorizontalBlock"] {
+            margin-left: 2rem !important;
+        }
+            
+
         .stImage img {
             max-width: 60px !important;
             height: auto !important;
