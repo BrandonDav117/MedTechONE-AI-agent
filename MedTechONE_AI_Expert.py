@@ -57,17 +57,17 @@ st.markdown("""
             word-break: break-word !important;
         }
         h1, .stTitle, h2, .stHeader, .stSubheader {
-            font-size: 1.5rem !important;
-            line-height: 1.8rem !important;
+            font-size: 1.1rem !important;
+            line-height: 1.3rem !important;
             margin-left: 0.5rem !important;
         }
         textarea, .stTextInput>div>div>input {
             min-height: 3.5em !important;
             font-size: 1.1rem !important;
         }
-        /* Make the Hamlyn logo smaller on mobile */
+        /* Make the Hamlyn logo even smaller on mobile */
         img, .stImage>img {
-            max-width: 90px !important;
+            max-width: 60px !important;
             height: auto !important;
         }
     }

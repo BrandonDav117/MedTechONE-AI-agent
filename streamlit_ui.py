@@ -255,18 +255,16 @@ async def main():
                     display_message_part(part)
 
         # Chat input for the user
-        user_input = st.chat_input("What questions do you have about our MedTech Resources?")
+        user_input = st.chat_input("Ask MedTechONE here")
 
         if user_input:
             # We append a new request to the conversation explicitly
             st.session_state.messages.append(
                 ModelRequest(parts=[UserPromptPart(content=user_input)])
             )
-            
             # Display user prompt in the UI
             with st.chat_message("user"):
                 st.markdown(user_input)
-
             # Display the assistant's partial response while streaming
             with st.chat_message("assistant"):
                 # Actually run the agent now, streaming the text
