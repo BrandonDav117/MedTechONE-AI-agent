@@ -354,7 +354,7 @@ st.markdown("""
             margin-left: 0.2rem !important;
         }
         div[data-testid="stHorizontalBlock"] {
-            margin-left: 0.2rem !important;
+            margin-left: 2rem !important;
         }
             
             
