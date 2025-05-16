@@ -352,11 +352,10 @@ st.markdown("""
         }
         h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
         .stImage img {
-            margin-left: 0.2rem !important;
+            margin-left: 0.2rem;
         }
-        /* Use padding-left for Assessment Mode toggle parent */
         div[data-testid="stHorizontalBlock"] {
-            padding-left: -2rem !important;
+            margin-left: 0.4rem !important;
         }
         .stImage img {
             max-width: 60px !important;
