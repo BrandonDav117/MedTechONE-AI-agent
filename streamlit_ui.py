@@ -359,7 +359,7 @@ st.markdown("""
         Larger left margin for Assessment Mode toggle
         div[data-testid="stHorizontalBlock"] > div:first-child {
             margin-left: 2.2rem !important;
-            margin-bottom: 0rem !important;
+            margin-bottom: -0.2rem !important;
         }
         .stImage img {
             max-width: 60px !important;
