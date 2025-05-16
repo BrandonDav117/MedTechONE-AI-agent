@@ -30,27 +30,6 @@ EMBEDDING_CACHE_SIZE = 1000
 DOCUMENT_CACHE_SIZE = 100
 CACHE_TTL = 3600  # 1 hour in seconds
 
-st.markdown("""
-    <style>
-    @media (max-width: 600px) {
-        h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
-        div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
-        .stImage img {
-            margin-left: 0.5rem !important;
-            margin-bottom: 0.5rem !important;
-        }
-        .stImage img {
-            max-width: 60px !important;
-            height: auto !important;
-        }
-        textarea, .stTextInput>div>div>input {
-            min-height: 1.3em !important;
-            font-size: 1.1rem !important;
-        }
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 @dataclass
 class MedTechONEAIDeps:
     supabase: Client
