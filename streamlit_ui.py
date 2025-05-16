@@ -343,18 +343,15 @@ st.markdown("""
     @media (max-width: 600px) {
         h1, .stTitle {
             font-size: 1.3rem !important;
-            margin-left: 0.2rem !important;
+            margin-left: 0.1rem !important;
         }
         p, .stMarkdown {
             font-size: 1.1rem !important;
-            margin-left: 0.2rem !important;
+            margin-left: 0.1rem !important;
         }
         .stImage img {
             font-size: 1rem !important;
-            margin-left: 0.2rem !important;
-        }
-        div[data-testid="stHorizontalBlock"] {
-            margin-left: 2rem !important;
+            margin-left: 0.1rem !important;
         }
             
             
