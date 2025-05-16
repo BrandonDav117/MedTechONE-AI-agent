@@ -33,7 +33,6 @@ CACHE_TTL = 3600  # 1 hour in seconds
 st.markdown("""
     <style>
     @media (max-width: 600px) {
-        /* Consistent left margin and vertical spacing for all main elements */
         h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
         div[data-testid="stHorizontalBlock"] > div:first-child, /* Assessment Mode toggle */
         .stImage img {
