@@ -341,6 +341,15 @@ async def main():
 st.markdown("""
     <style>
     @media (max-width: 600px) {
+        h1, .stTitle {
+            font-size: 1.3rem !important;
+        }
+        h2, .stHeader {
+            font-size: 1.1rem !important;
+        }
+        .stSubheader {
+            font-size: 1rem !important;
+        }
         /* Standard left margin for title, subheading, logo */
         h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
         .stImage img {
