@@ -335,6 +335,33 @@ async def main():
                     st.markdown(f"- Correct answer: {correct_ans}")
                     st.markdown(f"- Explanation: {q['explanation']}\n")
 
+st.markdown("""
+    <style>
+    @media (max-width: 600px) {
+        h1, .stTitle, h2, .stHeader {
+            font-size: 1.1rem !important;
+            line-height: 1.3rem !important;
+            margin-left: 0.5rem !important;
+        }
+        .stSubheader, .stMarkdown:first-of-type {
+            margin-left: 0.5rem !important;
+        }
+        /* Reduce margin below Assessment Mode toggle */
+        .stToggle {
+            margin-bottom: 0.2rem !important;
+        }
+        textarea, .stTextInput>div>div>input {
+            min-height: 1.3em !important;
+            font-size: 1.1rem !important;
+        }
+        /* Make the Hamlyn logo even smaller on mobile */
+        img, .stImage>img {
+            max-width: 60px !important;
+            height: auto !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     asyncio.run(main())
