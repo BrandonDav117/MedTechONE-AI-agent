@@ -353,13 +353,13 @@ st.markdown("""
         Standard left margin for title, subheading, logo */
         h1, .stTitle, h2, .stHeader, .stSubheader, .stMarkdown:first-of-type,
         .stImage img {
-            margin-left: 0rem !important;
+            margin-left: 0.2rem !important;
             margin-bottom: 0rem !important;
         }
         Larger left margin for Assessment Mode toggle
         div[data-testid="stHorizontalBlock"] > div:first-child {
-            margin-left: 2rem !important;
-            margin-bottom: 0.2rem !important;
+            margin-left: 2.2rem !important;
+            margin-bottom: 0rem !important;
         }
         .stImage img {
             max-width: 60px !important;
