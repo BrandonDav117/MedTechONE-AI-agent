@@ -99,7 +99,7 @@ The interface is optimized for mobile devices with:
 - `streamlit_ui.py`: Main web interface
 - `MedTechONE_AI_Expert.py`: Core AI agent implementation
 - `process_pdf_docs.py`: Documentation processor
-- `site_pages.sql`: Database setup commands
+- `site_pages.sql`: Database schema and setup
 - `requirements.txt`: Project dependencies
 - `assets/`: Static assets and resources
 
