@@ -1,20 +1,21 @@
-# Pydantic AI: Documentation Crawler and RAG Agent
+# MedTechONE AI Agent
 
-An intelligent documentation crawler and RAG (Retrieval-Augmented Generation) agent built using Pydantic AI and Supabase. The agent can crawl documentation websites, store content in a vector database, and provide intelligent answers to user questions by retrieving and analyzing relevant documentation chunks.
+An intelligent documentation assistant built to help users navigate and understand MedTechONE's documentation. The agent uses advanced AI techniques to provide accurate, context-aware answers to questions about MedTechONE's systems and processes.
 
 ## Features
 
-- Documentation website crawling and chunking
-- Vector database storage with Supabase
+- Intelligent documentation processing and understanding
+- Vector database storage with Supabase for efficient retrieval
 - Semantic search using OpenAI embeddings
-- RAG-based question answering
-- Support for code block preservation
-- Streamlit UI for interactive querying
-- Available as both API endpoint and web interface
+- RAG-based question answering with context awareness
+- Support for code block and technical content preservation
+- Mobile-friendly Streamlit UI for easy access
+- Assessment mode for evaluating answer quality
+- Support for both general queries and specific documentation sections
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.9+
 - Supabase account and database
 - OpenAI API key
 - Streamlit (for web interface)
@@ -23,8 +24,8 @@ An intelligent documentation crawler and RAG (Retrieval-Augmented Generation) ag
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/coleam00/ottomator-agents.git
-cd ottomator-agents/crawl4AI-agent
+git clone https://github.com/brandondavies/MedTechONE-AI-agent.git
+cd MedTechONE-AI-agent
 ```
 
 2. Install dependencies (recommended to use a Python virtual environment):
@@ -35,13 +36,13 @@ pip install -r requirements.txt
 ```
 
 3. Set up environment variables:
-   - Rename `.env.example` to `.env`
-   - Edit `.env` with your API keys and preferences:
+   - Create a `.env` file in the project root
+   - Add your API keys and preferences:
    ```env
    OPENAI_API_KEY=your_openai_api_key
    SUPABASE_URL=your_supabase_url
    SUPABASE_SERVICE_KEY=your_supabase_service_key
-   LLM_MODEL=gpt-4o-mini  # or your preferred OpenAI model
+   LLM_MODEL=gpt-4  # or your preferred OpenAI model
    ```
 
 ## Usage
@@ -53,24 +54,24 @@ Execute the SQL commands in `site_pages.sql` to:
 2. Enable vector similarity search
 3. Set up Row Level Security policies
 
-In Supabase, do this by going to the "SQL Editor" tab and pasting in the SQL into the editor there. Then click "Run".
+In Supabase, go to the "SQL Editor" tab and paste in the SQL from `site_pages.sql`. Then click "Run".
 
-### Crawl Documentation
+### Process Documentation
 
-To crawl and store documentation in the vector database:
+To process and store documentation in the vector database:
 
 ```bash
-python crawl_pydantic_ai_docs.py
+python process_pdf_docs.py
 ```
 
 This will:
-1. Fetch URLs from the documentation sitemap
-2. Crawl each page and split into chunks
+1. Process PDF documentation
+2. Split content into meaningful chunks
 3. Generate embeddings and store in Supabase
 
-### Streamlit Web Interface
+### Web Interface
 
-For an interactive web interface to query the documentation:
+To start the interactive web interface:
 
 ```bash
 streamlit run streamlit_ui.py
@@ -78,53 +79,43 @@ streamlit run streamlit_ui.py
 
 The interface will be available at `http://localhost:8501`
 
-## Configuration
+## Features
 
-### Database Schema
+### Assessment Mode
+The interface includes an assessment mode toggle that helps evaluate the quality and accuracy of the AI's responses. This is particularly useful for:
+- Verifying technical accuracy
+- Checking response completeness
+- Ensuring proper context usage
 
-The Supabase database uses the following schema:
-```sql
-CREATE TABLE site_pages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    url TEXT,
-    chunk_number INTEGER,
-    title TEXT,
-    summary TEXT,
-    content TEXT,
-    metadata JSONB,
-    embedding VECTOR(1536)
-);
-```
-
-### Chunking Configuration
-
-You can configure chunking parameters in `crawl_pydantic_ai_docs.py`:
-```python
-chunk_size = 5000  # Characters per chunk
-```
-
-The chunker intelligently preserves:
-- Code blocks
-- Paragraph boundaries
-- Sentence boundaries
+### Mobile Optimization
+The interface is optimized for mobile devices with:
+- Responsive design
+- Touch-friendly controls
+- Readable text sizing
+- Efficient space usage
 
 ## Project Structure
 
-- `crawl_pydantic_ai_docs.py`: Documentation crawler and processor
-- `pydantic_ai_expert.py`: RAG agent implementation
-- `streamlit_ui.py`: Web interface
+- `streamlit_ui.py`: Main web interface
+- `MedTechONE_AI_Expert.py`: Core AI agent implementation
+- `process_pdf_docs.py`: Documentation processor
 - `site_pages.sql`: Database setup commands
 - `requirements.txt`: Project dependencies
-
-## Live Agent Studio Version
-
-If you're interested in seeing how this agent is implemented in the Live Agent Studio, check out the `studio-integration-api` directory. This contains the API endpoint for the production version of the agent that runs on the platform.
+- `assets/`: Static assets and resources
 
 ## Error Handling
 
 The system includes robust error handling for:
-- Network failures during crawling
 - API rate limits
 - Database connection issues
 - Embedding generation errors
-- Invalid URLs or content
+- Invalid content processing
+- Network failures
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is proprietary and confidential. All rights reserved.
