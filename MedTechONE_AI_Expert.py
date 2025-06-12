@@ -89,14 +89,14 @@ The knowledge hub website is structured as follows (you should know all the page
   • Reimbursement strategies
   • Market entry & uptake
 
-If a user asks about a topic under development, respond: "This topic is under development and will be released in the future. Please let me know if you'd like information on any of the currently available topics, such as...”
+If a user asks about a topic under development, respond: "This topic is under development and will be released in the future. Please let me know if you'd like information on any of the currently available topics, such as..."
 
 Response Structure:
 When responding to ANY query, you MUST follow this exact structure:
 
 1. Content Overview:
-   - Start with a clear overview of the topic using the data from the “pdf_documents” table in Supabase.
-   - Refer the user to the relevant site pages on the knowledge hub from “site_pages”.
+   - Start with a clear overview of the topic using the data from the "pdf_documents" table in Supabase.
+   - Refer the user to the relevant site pages on the knowledge hub from "site_pages".
    - If no content is found, state that you are not knowledgeable on this subject at the moment.
 
 2. Recommended Resources:
@@ -122,8 +122,6 @@ Constraints:
 🚫 Always consider the ECR's development stage and device type when providing information, try and ascertain this information from them
 🚫 Prioritise practical, actionable advice over theoretical knowledge
 🚫 Focus on supporting Imperial College London's excellence in MedTech research and translation
-
-
 """
 
 MedTechONE_AI_Expert = Agent(
@@ -321,10 +319,9 @@ def list_airtable_resources(ctx: RunContext[MedTechONEAIDeps], filter_field: str
 @MedTechONE_AI_Expert.tool
 async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], user_query: str) -> str:
     """
-    Retrieve relevant content from both PDFs and web pages, with ECR-specific context.
+    Retrieve relevant content from PDFs and Airtable resources, with ECR-specific context.
     Implements hybrid search: always run both embedding and keyword search, combine and deduplicate results.
-    Broaden keyword fallback to search for related terms and increase match_count to 10.
-    Always signpost and recommend resources by default.
+    Prioritizes PDF content and always includes relevant Airtable resources.
     """
     try:
         # Get embedding for the query
@@ -334,7 +331,7 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
         seen_ids = set()
         hybrid_pdf_results = []
 
-        # 1. Embedding match for PDFs
+        # 1. Embedding match for PDFs (primary search method)
         pdf_results = ctx.deps.supabase.rpc(
             'match_pdf_documents',
             {'query_embedding': query_embedding, 'match_threshold': 0.0, 'match_count': 10}
@@ -345,7 +342,7 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                 hybrid_pdf_results.append(doc)
                 seen_ids.add(doc_id)
 
-        # 2. Broader keyword search if needed
+        # 2. Broader keyword search if needed (fallback)
         if not hybrid_pdf_results:
             for kw in keywords:
                 keyword_result_content = ctx.deps.supabase.from_('pdf_documents') \
@@ -369,16 +366,10 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                         hybrid_pdf_results.append(doc)
                         seen_ids.add(doc_id)
 
-        # 3. Search in web pages
-        web_results = ctx.deps.supabase.rpc(
-            'match_site_pages',
-            {'query_embedding': query_embedding, 'match_count': 10, 'filter': {}}
-        ).execute()
-
-        # 4. Airtable resources (always include)
+        # 3. Airtable resources (always include)
         airtable_resources_md = list_airtable_resources(ctx, filter_value=user_query)
 
-        # 5. Combine and format results
+        # 4. Format results
         results = []
         for doc in hybrid_pdf_results:
             results.append({
@@ -389,17 +380,9 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
                 'ecr_metadata': doc.get('ecr_metadata', {}),
                 'similarity': doc.get('similarity', None)
             })
-        for doc in web_results.data:
-            results.append({
-                'type': 'web',
-                'title': doc['title'],
-                'content': doc['content'],
-                'url': doc['url'],
-                'similarity': doc['similarity']
-            })
         results.sort(key=lambda x: x.get('similarity', 0) or 0, reverse=True)
 
-        # 6. Build structured response
+        # 5. Build structured response
         overview = ""
         if results:
             top = results[0]
@@ -407,7 +390,7 @@ async def retrieve_relevant_content_unified(ctx: RunContext[MedTechONEAIDeps], u
         else:
             overview = "I couldn't find specific content about this topic in the MedTechONE database. Please clarify your question or try a different topic.\n\n"
 
-        # Recommended resources (PDFs, web, Airtable)
+        # Recommended resources (PDFs and Airtable)
         recommended = "**Recommended Resources:**\n"
         for r in results[:5]:
             if r['url']:
